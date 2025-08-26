@@ -33,8 +33,8 @@ scene.add(new THREE.AmbientLight(0xffffff, 1.2));
 
 // --- НАСТРОЙКИ ДЛЯ МОБИЛЬНЫХ ---
 const isMobile = window.innerWidth < 700;
-const markerRadius = isMobile ? 0.045 : 0.02;
-const hitRadius = markerRadius * 2.2;
+const markerRadius = 0.02; // одинаковый размер для всех устройств
+const hitRadius = isMobile ? 0.06 : markerRadius; // только на мобильных область клика шире
 
 const loader = new THREE.TextureLoader();
 loader.load('planet.jpg', function(texture) {
@@ -96,7 +96,7 @@ loader.load('planet.jpg', function(texture) {
         const pos = latLonToVector3(lat, lon);
         markerPositions.push(pos);
 
-        // Видимый маркер
+        // Видимый маркер (одинаковый размер)
         const markerMaterial = new THREE.MeshBasicMaterial({ color: 0x160F29 });
         const marker = new THREE.Mesh(
             new THREE.SphereGeometry(markerRadius, 32, 32),
@@ -107,7 +107,7 @@ loader.load('planet.jpg', function(texture) {
         globe.add(marker);
         markerMeshes.push(marker);
 
-        // Невидимая "зона захвата" для мобильных
+        // Невидимая "зона захвата" для мобильных (шире, но не видна)
         if (isMobile) {
             const hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
             const hitSphere = new THREE.Mesh(
