@@ -1,20 +1,23 @@
 import * as THREE from 'three';
 
-// Красивый tooltip
+// Tooltip-стилизация
 const tooltip = document.createElement('div');
 tooltip.style.position = 'fixed';
-tooltip.style.padding = '8px 16px';
-tooltip.style.background = 'rgba(30,40,60,0.95)';
-tooltip.style.color = '#fff';
-tooltip.style.borderRadius = '8px';
-tooltip.style.pointerEvents = 'none';
-tooltip.style.fontSize = '18px';
+tooltip.style.background = '#fff';
+tooltip.style.color = '#160F29';
+tooltip.style.borderRadius = '9999px';
+tooltip.style.fontFamily = 'Helvetica, Arial, sans-serif';
+tooltip.style.border = '1px solid #000';
+tooltip.style.padding = '5px 30px';
+tooltip.style.fontSize = '14px';
 tooltip.style.fontWeight = 'bold';
-tooltip.style.boxShadow = '0 4px 24px 0 rgba(0,0,0,0.25)';
+tooltip.style.boxShadow = '0 4px 24px 0 rgba(0,0,0,0.10)';
 tooltip.style.transition = 'opacity 0.2s';
 tooltip.style.opacity = '0';
 tooltip.style.zIndex = '1000';
 document.body.appendChild(tooltip);
+
+document.body.style.background = '#F6F0D8';
 
 const container = document.getElementById('globe-container');
 const scene = new THREE.Scene();
@@ -22,47 +25,46 @@ const camera = new THREE.PerspectiveCamera(45, container.offsetWidth / container
 camera.position.z = 3;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0xF6F0D8, 1);
 renderer.setSize(container.offsetWidth, container.offsetHeight);
 container.appendChild(renderer.domElement);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-const pointLight = new THREE.PointLight(0xffffff, 1.2, 100);
-pointLight.position.set(5, 5, 5);
-scene.add(pointLight);
+scene.add(new THREE.AmbientLight(0xffffff, 1.2));
 
 const loader = new THREE.TextureLoader();
 loader.load('planet.jpg', function(texture) {
     // Глобус
     const globe = new THREE.Mesh(
         new THREE.SphereGeometry(1, 64, 64),
-        new THREE.MeshPhongMaterial({ map: texture, shininess: 20 })
+        new THREE.MeshBasicMaterial({ map: texture })
     );
-    globe.rotation.x = 0.35; // наклон вниз
+    globe.rotation.x = 0.42;
+    globe.rotation.z = 0.12;
     scene.add(globe);
 
-    // Маркеры и их данные
+    // Маркеры и их данные (перенесены из плоской карты)
     const markersData = [
-        { lat: 56.95, lon: 24.1, name: 'Latvia' },
-        { lat: 54.68, lon: 25.28, name: 'Lithuania' },
-        { lat: 59.43, lon: 24.75, name: 'Estonia' },
-        { lat: 52.52, lon: 13.4, name: 'Germany' },
-        { lat: 40.4, lon: -3.7, name: 'Spain' },
-        { lat: 40.38, lon: 49.89, name: 'Azerbaijan' },
-        { lat: 41.31, lon: 69.24, name: 'Uzbekistan' },
-        { lat: 51.16, lon: 71.43, name: 'Kazakhstan' },
-        { lat: 35.18, lon: 33.36, name: 'Cyprus' },
-        { lat: 25.27, lon: 55.3, name: 'UAE (Dubai)' },
-        { lat: 51.5, lon: -0.12, name: 'UK (London)' },
-        { lat: 40.71, lon: -74.0, name: 'USA (New York)' },
-        { lat: 34.05, lon: -118.24, name: 'USA (Los Angeles)' }
+        { lat: 27.68, lon: 11.28, name: 'Latvia' },
+        { lat: 24.68, lon: 10.28, name: 'Lithuania' },
+        { lat: 30.68, lon: 13.28, name: 'Estonia' },
+        { lat: 21.52, lon: 5.4, name: 'Germany' },
+        { lat: 12.4, lon: -13.7, name: 'Spain' },
+        { lat: 12.38, lon: 37, name: 'Azerbaijan' },
+        { lat: 14.31, lon: 49.24, name: 'Uzbekistan' },
+        { lat: 18.16, lon: 55.43, name: 'Kazakhstan' },
+        { lat: 6.18, lon: 18.36, name: 'Cyprus' },
+        { lat: -2.27, lon: 38.3, name: 'UAE' },
+        { lat: 22.5, lon: -10, name: 'UK' },
+        { lat: 18.71, lon: -77.0, name: 'USA' },
+        { lat: 6.05, lon: -124.24, name: 'USA' }
     ];
 
     // Для raycaster
     const markerMeshes = [];
-    const glowMeshes = [];
     const markerPositions = [];
 
     function latLonToVector3(lat, lon, radius = 1.01) {
+        // Если маркеры смещены, попробуйте поменять знак у lon
         const phi = (90 - lat) * Math.PI / 180;
         const theta = (lon + 180) * Math.PI / 180;
         const x = -radius * Math.sin(phi) * Math.cos(theta);
@@ -75,35 +77,18 @@ loader.load('planet.jpg', function(texture) {
         const pos = latLonToVector3(lat, lon);
         markerPositions.push(pos);
 
-        // 3D-эффект маркера: отражающий шарик
-        const markerMaterial = new THREE.MeshPhongMaterial({
-            color: 0xffe066,
-            shininess: 100,
-            specular: 0xffffff,
-            emissive: 0x222200
+        // Маркер: маленький, цвет #160F29
+        const markerMaterial = new THREE.MeshBasicMaterial({
+            color: 0x160F29
         });
         const marker = new THREE.Mesh(
-            new THREE.SphereGeometry(0.035, 32, 32),
+            new THREE.SphereGeometry(0.02, 32, 32),
             markerMaterial
         );
         marker.position.copy(pos);
         marker.userData = { name, markerMaterial };
         globe.add(marker);
         markerMeshes.push(marker);
-
-        // Glow-эффект: прозрачная сфера большего радиуса
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffe066,
-            transparent: true,
-            opacity: 0.25
-        });
-        const glow = new THREE.Mesh(
-            new THREE.SphereGeometry(0.06, 32, 32),
-            glowMaterial
-        );
-        glow.position.copy(pos);
-        globe.add(glow);
-        glowMeshes.push(glow);
     }
 
     markersData.forEach(m => addMarker(m.lat, m.lon, m.name));
@@ -117,7 +102,7 @@ loader.load('planet.jpg', function(texture) {
             const arcCurve = createArcCurve(start, end, 1.12);
             const arcGeometry = new THREE.BufferGeometry().setFromPoints(arcCurve.getPoints(60));
             const arcMaterial = new THREE.LineBasicMaterial({
-                color: 0x00ffff,
+                color: 0xC7C7C7,
                 linewidth: 2,
                 transparent: true,
                 opacity: 0.45
@@ -129,17 +114,19 @@ loader.load('planet.jpg', function(texture) {
     }
 
     function createArcCurve(start, end, arcHeight = 1.12) {
-        // Красивая дуга между двумя точками на сфере
         const mid = start.clone().add(end).normalize().multiplyScalar(arcHeight);
         return new THREE.QuadraticBezierCurve3(start, mid, end);
     }
 
-    // Вращение
+    // Вращение (только авто)
     let scrollPercent = 0;
     window.addEventListener('scroll', () => {
         const docHeight = document.body.scrollHeight - window.innerHeight;
         scrollPercent = docHeight > 0 ? window.scrollY / docHeight : 0;
     });
+
+    let autoRotationSpeed = 0.004;
+    let lastFrameTime = performance.now();
 
     // Raycaster для наведения
     const raycaster = new THREE.Raycaster();
@@ -159,19 +146,6 @@ loader.load('planet.jpg', function(texture) {
     function animate(time) {
         requestAnimationFrame(animate);
 
-        // Пульсация glow-эффекта
-        for (let i = 0; i < glowMeshes.length; i++) {
-            const glow = glowMeshes[i];
-            const scale = 1 + 0.25 * Math.abs(Math.sin(time * 0.002 + i));
-            glow.scale.set(scale, scale, scale);
-            glow.material.opacity = 0.15 + 0.25 * Math.abs(Math.sin(time * 0.002 + i));
-        }
-
-        // Мерцание дуг
-        for (let arc of arcLines) {
-            arc.material.opacity = 0.25 + 0.25 * Math.abs(Math.sin(time * 0.001 + arc.id));
-        }
-
         // Raycasting
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(markerMeshes, true);
@@ -190,12 +164,16 @@ loader.load('planet.jpg', function(texture) {
             isHoveringMarker = false;
         }
 
-        // Вращение только если не наведено на маркер
+        // Только авто-вращение
+        const now = performance.now();
+        const delta = (now - lastFrameTime) / 16.67;
+        lastFrameTime = now;
+
         if (!isHoveringMarker) {
             if (document.body.scrollHeight - window.innerHeight > 0) {
                 globe.rotation.y = scrollPercent * 2 * Math.PI;
             } else {
-                globe.rotation.y += 0.01;
+                globe.rotation.y += autoRotationSpeed * delta;
             }
         }
 
