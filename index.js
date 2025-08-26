@@ -31,6 +31,11 @@ container.appendChild(renderer.domElement);
 
 scene.add(new THREE.AmbientLight(0xffffff, 1.2));
 
+// --- НАСТРОЙКИ ДЛЯ МОБИЛЬНЫХ ---
+const isMobile = window.innerWidth < 700;
+const markerRadius = isMobile ? 0.045 : 0.02;
+const hitRadius = markerRadius * 2.2;
+
 const loader = new THREE.TextureLoader();
 loader.load('planet.jpg', function(texture) {
     // Глобус
@@ -42,7 +47,22 @@ loader.load('planet.jpg', function(texture) {
     globe.rotation.z = 0.12;
     scene.add(globe);
 
-    // Маркеры и их данные (перенесены из плоской карты)
+    // Градиентная тень (накладывается поверх глобуса)
+    const gradientTexture = new THREE.TextureLoader().load('gradient-overlay.png');
+    const gradientMaterial = new THREE.MeshBasicMaterial({
+        map: gradientTexture,
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false
+    });
+    const gradientSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(1.025, 64, 64),
+        gradientMaterial
+    );
+    gradientSphere.rotation.z = Math.PI / 4;
+    scene.add(gradientSphere);
+
+    // Маркеры и их данные
     const markersData = [
         { lat: 27.68, lon: 11.28, name: 'Latvia' },
         { lat: 24.68, lon: 10.28, name: 'Lithuania' },
@@ -64,7 +84,6 @@ loader.load('planet.jpg', function(texture) {
     const markerPositions = [];
 
     function latLonToVector3(lat, lon, radius = 1.01) {
-        // Если маркеры смещены, попробуйте поменять знак у lon
         const phi = (90 - lat) * Math.PI / 180;
         const theta = (lon + 180) * Math.PI / 180;
         const x = -radius * Math.sin(phi) * Math.cos(theta);
@@ -77,18 +96,29 @@ loader.load('planet.jpg', function(texture) {
         const pos = latLonToVector3(lat, lon);
         markerPositions.push(pos);
 
-        // Маркер: маленький, цвет #160F29
-        const markerMaterial = new THREE.MeshBasicMaterial({
-            color: 0x160F29
-        });
+        // Видимый маркер
+        const markerMaterial = new THREE.MeshBasicMaterial({ color: 0x160F29 });
         const marker = new THREE.Mesh(
-            new THREE.SphereGeometry(0.02, 32, 32),
+            new THREE.SphereGeometry(markerRadius, 32, 32),
             markerMaterial
         );
         marker.position.copy(pos);
         marker.userData = { name, markerMaterial };
         globe.add(marker);
         markerMeshes.push(marker);
+
+        // Невидимая "зона захвата" для мобильных
+        if (isMobile) {
+            const hitMaterial = new THREE.MeshBasicMaterial({ visible: false });
+            const hitSphere = new THREE.Mesh(
+                new THREE.SphereGeometry(hitRadius, 16, 16),
+                hitMaterial
+            );
+            hitSphere.position.copy(pos);
+            hitSphere.userData = { name, markerMaterial };
+            globe.add(hitSphere);
+            markerMeshes.push(hitSphere);
+        }
     }
 
     markersData.forEach(m => addMarker(m.lat, m.lon, m.name));
@@ -134,14 +164,25 @@ loader.load('planet.jpg', function(texture) {
     let lastPointerEvent = null;
     let isHoveringMarker = false;
 
-    function onPointerMove(event) {
+    // Мышь
+    renderer.domElement.addEventListener('pointermove', function(event) {
+        if (event.pointerType === 'touch') return; // не мешаем touch
         lastPointerEvent = event;
         const rect = renderer.domElement.getBoundingClientRect();
         mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    }
+    });
 
-    renderer.domElement.addEventListener('pointermove', onPointerMove);
+    // Touch
+    renderer.domElement.addEventListener('touchstart', function(event) {
+        if (event.touches.length === 1) {
+            const touch = event.touches[0];
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+            lastPointerEvent = touch;
+        }
+    });
 
     function animate(time) {
         requestAnimationFrame(animate);
