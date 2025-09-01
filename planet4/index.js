@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from '../three.module.js'
 
 // Tooltip-стилизация
 const tooltip = document.createElement('div');
@@ -129,7 +129,7 @@ const innerSphere = new THREE.Mesh(
             const arcCurve = createArcCurve(start, end, 1.12);
             const arcGeometry = new THREE.BufferGeometry().setFromPoints(arcCurve.getPoints(60));
             const arcMaterial = new THREE.LineBasicMaterial({
-                color: 0xC7C7C7,
+                color: 0xffffff,
                 linewidth: 2,
                 transparent: true,
                 opacity: 0.45
@@ -184,7 +184,7 @@ const innerSphere = new THREE.Mesh(
     function animate(time) {
         requestAnimationFrame(animate);
 
-        // Raycasting
+       
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(markerMeshes, true);
 
@@ -193,8 +193,25 @@ const innerSphere = new THREE.Mesh(
             tooltip.textContent = marker.userData.name;
             tooltip.style.display = 'block';
             tooltip.style.opacity = '1';
-            tooltip.style.left = `${lastPointerEvent.clientX + 10}px`;
-            tooltip.style.top = `${lastPointerEvent.clientY + 10}px`;
+         if (intersects.length > 0 && lastPointerEvent) {
+    const marker = intersects[0].object;
+    tooltip.textContent = marker.userData.name;
+    tooltip.style.display = 'block';
+    tooltip.style.opacity = '1';
+
+   
+    const tooltipX = lastPointerEvent.clientX - tooltip.offsetWidth - 10; 
+    const tooltipY = lastPointerEvent.clientY + 10;                      
+
+    tooltip.style.left = `${tooltipX}px`;
+    tooltip.style.top = `${tooltipY}px`;
+
+    isHoveringMarker = true;
+} else {
+    tooltip.style.opacity = '0';
+    setTimeout(() => { if (!isHoveringMarker) tooltip.style.display = 'none'; }, 200);
+    isHoveringMarker = false;
+}
             isHoveringMarker = true;
         } else {
             tooltip.style.opacity = '0';
