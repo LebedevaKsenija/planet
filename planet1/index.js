@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js'
 
 // Tooltip-стилизация
 const tooltip = document.createElement('div');
@@ -224,4 +224,5 @@ const innerSphere = new THREE.Mesh(
         camera.updateProjectionMatrix();
         renderer.setSize(container.offsetWidth, container.offsetHeight);
     });
+
 });
