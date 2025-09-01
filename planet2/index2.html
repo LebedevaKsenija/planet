@@ -1,0 +1,100 @@
+<div style="text-align:center;">
+    <canvas id="flat-map" width="1151" height="768" style="background:#F6F0D8; border:1px solid #ccc;"></canvas>
+</div>
+<script>
+    const img = new Image();
+    img.src = 'planet.jpg'; // ваша карта
+
+    const markersData = [{
+        lat: 27.68,
+        lon: 11.28,
+        name: 'Latvia'
+    }, {
+        lat: 24.68,
+        lon: 10.28,
+        name: 'Lithuania'
+    }, {
+        lat: 30.68,
+        lon: 13.28,
+        name: 'Estonia'
+    }, {
+        lat: 21.52,
+        lon: 5.4,
+        name: 'Germany'
+    }, {
+        lat: 12.4,
+        lon: -13.7,
+        name: 'Spain'
+    }, {
+        lat: 12.38,
+        lon: 37,
+        name: 'Azerbaijan'
+    }, {
+        lat: 14.31,
+        lon: 49.24,
+        name: 'Uzbekistan'
+    }, {
+        lat: 18.16,
+        lon: 55.43,
+        name: 'Kazakhstan'
+    }, {
+        lat: 6.18,
+        lon: 18.36,
+        name: 'Cyprus'
+    }, {
+        lat: -2.27,
+        lon: 38.3,
+        name: 'UAE'
+    }, {
+        lat: 22.5,
+        lon: -10,
+        name: 'UK'
+    }, {
+        lat: 18.71,
+        lon: -77.0,
+        name: 'USA'
+    }, {
+        lat: 6.05,
+        lon: -124.24,
+        name: 'USA'
+    }];
+
+    // Перевод широты/долготы в пиксели на карте
+    function latLonToXY(lat, lon, width, height) {
+        // Equirectangular: x = (lon + 180) / 360 * width
+        //                 y = (90 - lat) / 180 * height
+        const x = (lon + 180) / 360 * width;
+        const y = (90 - lat) / 180 * height;
+        return {
+            x,
+            y
+        };
+    }
+
+    img.onload = function() {
+        const canvas = document.getElementById('flat-map');
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Нарисовать маркеры
+        markersData.forEach(marker => {
+            const {
+                x,
+                y
+            } = latLonToXY(marker.lat, marker.lon, canvas.width, canvas.height);
+            // Кружок
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, 2 * Math.PI);
+            ctx.fillStyle = '#160F29';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // Подпись
+            ctx.font = 'bold 16px Helvetica, Arial, sans-serif';
+            ctx.fillStyle = '#160F29';
+            ctx.textAlign = 'left';
+            ctx.fillText(marker.name, x + 12, y + 5);
+        });
+    };
+</script>
